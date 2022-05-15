@@ -24,7 +24,33 @@ typedef struct ProcessInfo {
 int computeWaitTime (int currWaitTime, int a, int b) {
 	return currWaitTime + (a - b);
 }
-
+/*	FUNCTION: computeTotalWaitTime ()
+	
+	Description: This function computes the total waiting time for each process
+	@Parameter: processes[] - array of structures for processes
+				Y - Number of elements (e.g. processes)
+                startEndTime[][3] - array of the start-end time pairs of the processes
+                totalBurst - the sum of all burst time of the processes
+*/
+void computeTotalWaitTime (Process processes [], int Y, int startEndTime [][3], int totalBurst) {
+    int i,j;
+    // Computing total waiting time per process
+    for(i = 0; i < Y; i++)
+        for(j = 0; j < totalBurst; j++)
+            if(processes[i].A == startEndTime[j][0]) {
+                processes[i].D = computeWaitTime(processes[i].D, startEndTime[j][1], processes[i].B);
+                processes[i].E = startEndTime[j][1];
+                processes[i].F = startEndTime[j][1];                
+                j = totalBurst;
+            }
+    for(i = 0; i < Y; i++)
+        for(j = 0; j < totalBurst; j++)
+            if(processes[i].A == startEndTime[j][0]) {
+                processes[i].E = startEndTime[j][1];
+                processes[i].D = computeWaitTime(processes[i].D, processes[i].E, processes[i].F);  
+                processes[i].F = startEndTime[j][2];
+            }
+}
 /*	FUNCTION: computeAvgWaitTime ()
 	
 	Description: This function computes the average waiting time given the waiting time of each process
@@ -42,17 +68,48 @@ float computeAvgWaitTime (Process processes [], int Y) {
 	return sum / Y;
 }
 
+/*	FUNCTION: printMultipleStartEndTime ()
+	
+	Description: This function prints all of start and end time of a process
+	@Parameter: process - specific process
+                startEndTime[][3] - array of the start-end time pairs of the processes
+                totalBurst - the sum of all burst time of the processes
+*/
+void printMultipleStartEndTime (Process process, int startEndTime[][3], int totalBurst) {
+    for(int i=0; i < totalBurst; i++) {
+        if(process.A == startEndTime[i][0])
+            printf(" Start Time: %d End Time: %d | ", startEndTime[i][1], startEndTime[i][2]);
+    }
+}
 /*	FUNCTION: displayOutput()
 	
-	Description: This function displays the output for FCFS or SJF CPU scheduling algorithms
+	Description: This function displays the output for the scheduling algorithms
 	@Parameter: processes[] - array of structures for processes
 				Y - Number of elements (e.g. processes)
+                X - CPU scheduling algorithm indicator
+                startEndTime[][3] - array of the start-end time pairs of the processes
+                totalBurst - the sum of all burst time of the processes
 */
-void displayOutput (Process processes [], int Y) {
-	for(int i = 0; i < Y; i++) {
-        printf("P[%d] Start Time: %d End time: %d | Waiting time: %d\n", processes[i].A, processes[i].E, processes[i].F, processes[i].D);
+void displayOutput (Process processes [], int Y, int X, int startEndTime[][3], int totalBurst) {
+    Process temp;
+	// Sorting according to Process ID
+	for (int j = 0; j < Y; j++)
+		for (int k = j+1; k < Y; k++) {
+			if (processes[j].A > processes[k].A) {
+				temp = processes[j];
+				processes[j] = processes[k];
+				processes[k] = temp;
+			}
+		}
+    // Displaying Results
+    for(int i = 0; i < Y; i++) {
+        printf("P[%d]", processes[i].A);
+        if(X < 2)
+            printf(" Start Time: %d End Time: %d | ", processes[i].E, processes[i].F); 
+        else printMultipleStartEndTime(processes[i],startEndTime,totalBurst);
+        printf("Waiting Time: %d\n", processes[i].D); 
     }
-	printf ("Average waiting time:  %.2f", computeAvgWaitTime(processes, Y));
+	printf ("Average Waiting Time: %.2f \n", computeAvgWaitTime(processes, Y));
 }
 
 /*	FUNCTION: sortArrival()
@@ -74,7 +131,6 @@ void sortArrival (Process processes [], int Y) {
 			}
 		}
 }
-
 /*	FUNCTION: sortBurstTime()
 	
 	Description: This function sorts the array of processes according to burst time in an ascending order using bubble sort
@@ -94,14 +150,29 @@ void sortBurst (Process processes [], int Y) {
     }
 }	
 
-/*	FUNCTION: FCFS_SJF()
+/*	FUNCTION: computeTotalBurstTime()
 	
-	Description: This function shows the process scheduling using the FCFS or SJF method
+	Description: This function computes the total burst time of all processes
 	@Parameter: processes[] - array of structures for processes
 				Y - Number of elements (e.g. processes)
-                X - CPU Scheduling Algorithm indicator (0 - FCFS, 1 - SJF)
+    @Return: returns an integer representing the total burst time
 */
-void FCFS_SJF (Process processes [], int Y, int X) {
+int computeTotalBurstTime (Process processes [], int Y) {
+    float burstSum = 0;
+    for(int j = 0;j<Y;j++)
+        burstSum+=processes[j].C;
+    return burstSum;
+}
+
+/*	FUNCTION: FCFS_SJF()
+	
+	Description: This function performs the First-Come First-Served (FCFS) or the Shortest-Job-First Scheduling (SJF), depending on the X value.
+	@Parameter: processes[] - array of structures for processes
+                X - CPU Scheduling Algorithm indicator (0 - FCFS, 1 - SJF)
+				Y - Number of elements (e.g. processes)
+*/
+void FCFS_SJF (Process processes [], int X, int Y) {
+    int startEndTime[computeTotalBurstTime(processes, Y)][3]; 
     int currTimeStamp = 0;
     sortArrival(processes, Y);
     if (X == 1)
@@ -112,31 +183,65 @@ void FCFS_SJF (Process processes [], int Y, int X) {
         processes[i].D = computeWaitTime(0, processes[i].E, processes[i].B);
         currTimeStamp = processes[i].F;
     }
-    displayOutput(processes, Y);
+    displayOutput(processes, Y, X, startEndTime, 0);
 }
 
 /*	FUNCTION: SRTF()
 	
-	Description: 
+	Description: This function performs the Shortest-Remaining-Time-First (SRTF) Scheduling.
 	@Parameter: processes[] - array of structures for processes
+                X - CPU Scheduling Algorithm indicator (0 - FCFS, 1 - SJF)
 				Y - Number of elements (e.g. processes)
 */
-// void SRTF (Process processes [], int Y) {
-//    float burstSum = 0;
-//    for(int j = 0;j<Y;j++)
-//       burstSum+=processes[j].C;
-//    int startEndSize = ceil(burstSum / Y);
-//    int startEndTime [startEndSize][2];
-// 
-//     int currTimeStamp = 0;
-//     sortArrival(processes, Y);
-//     for(int i = 0; i < Y; i++) {
-//         processes[i].E = currTimeStamp;
-//         processes[i].F = currTimeStamp + processes[i].C;
-//         processes[i].D = computeWaitTime(0, processes[i].E, processes[i].B);
-//         currTimeStamp = processes[i].F;            
-//     }
-// }
+void SRTF (Process processes [], int X, int Y) {
+    int i, j, k, min, seCtr = 0; //rechecc
+    int totalBurst = computeTotalBurstTime(processes, Y);
+    int execution[totalBurst];
+    int startEndTime[totalBurst][3]; 
+    // Initializing startEndTime Array
+    for(i = 0; i < totalBurst; i++) {
+        startEndTime[i][0] = -1;
+        startEndTime[i][1] = -1;
+        startEndTime[i][2] = -1;
+    }
+
+    // Sorting Processes according to their arrival time
+    sortArrival(processes, Y);
+
+    // Execution of processes
+    for(i = 0; i < totalBurst; i++) { 
+        min = totalBurst; 
+        for(j = 0; j < Y; j++) 
+            if (processes[j].C != 0 && processes[j].B <= i && processes[j].C < min) { 
+                min = processes[j].C; 
+                k = j; 
+            }  
+        processes[k].C--; 
+        execution[i] = processes[k].A; 
+    }
+        
+    // Getting the start and end time pairs per process
+    for(i = 0; i < totalBurst; i++) {
+        startEndTime[seCtr][0] = execution[i];
+        startEndTime[seCtr][1] = i;
+        for(j = i; j < totalBurst; j++) {
+            if(execution[i] == execution[j]) {
+                startEndTime[seCtr][2] = j+1; 
+                if(j == totalBurst-1)
+                    i = j;
+            }
+            else {
+                i = j-1;
+                j = totalBurst;
+            }
+        }
+        seCtr++;
+    }
+    
+    // Generating Results
+    computeTotalWaitTime(processes,Y,startEndTime,totalBurst);
+    displayOutput(processes, Y, X, startEndTime, totalBurst);
+}
 
 /*
 	int A; // process ID
@@ -149,19 +254,20 @@ void FCFS_SJF (Process processes [], int Y, int X) {
 
 /*	FUNCTION: RR()
 	
-	Description: This function sorts the array of processes according to arrival time in an ascending order
+	Description: This function performs the Round Robin (RR) Scheduling.
 	@Parameter: processes[] - array of structures for processes
+                X - CPU Scheduling Algorithm indicator (0 - FCFS, 1 - SJF)
 				Y - Number of elements (e.g. processes)
                 Z - Time Slice Value
 */
-// void RR (Process processes [], int Y, int Z) {
+// void RR (Process processes [], int X, int Y, int Z) {
 	
 // }
 
 int main () {
     FILE *fptr;
     String20 sFile;
-    int X, Y, Z, ctr = -1;
+    int X = 0, Y = 0, Z = 0, ctr = -1;
     Process processes[100];
     
     // 1. The program will just ask the user to input the name of the input text file
@@ -203,14 +309,14 @@ int main () {
         // 4. Performing the CPU Scheduling Algo
     	switch (X) {
             case 0:
-            case 1: FCFS_SJF(processes, Y, X); 
+            case 1: FCFS_SJF(processes, X, Y); 
                 break;
-            case 2: //SRTF(processes, Y);
+            case 2: SRTF(processes, X, Y);
     			break;
-    		case 3: //RR(processes, Y, Z);
+    		case 3: //RR(processes, X, Y, Z);
                 break;
             default: printf("Program terminating...\n"); 
-    	}        
+    	}          
     }
     else printf("%s not found.\n\nProgram terminating...\n", sFile);    // 2.2. If the text file does not exists
 

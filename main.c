@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 typedef char String20 [21];
 typedef struct ProcessInfo {
@@ -41,6 +42,12 @@ float computeAvgWaitTime (Process processes [], int Y) {
 	return sum / Y;
 }
 
+/*	FUNCTION: displayOutput()
+	
+	Description: This function displays the output for FCFS or SJF CPU scheduling algorithms
+	@Parameter: processes[] - array of structures for processes
+				Y - Number of elements (e.g. processes)
+*/
 void displayOutput (Process processes [], int Y) {
 	for(int i = 0; i < Y; i++) {
         printf("P[%d] Start Time: %d End time: %d | Waiting time: %d\n", processes[i].A, processes[i].E, processes[i].F, processes[i].D);
@@ -48,10 +55,9 @@ void displayOutput (Process processes [], int Y) {
 	printf ("Average waiting time:  %.2f", computeAvgWaitTime(processes, Y));
 }
 
-
 /*	FUNCTION: sortArrival()
 	
-	Description: This function sorts the array of processes according to burst time in an ascending order using bubble sort
+	Description: This function sorts the array of processes according to arrival time in an ascending order using bubble sort
 	@Parameter: processes[] - array of structures for processes
 				Y - Number of elements (e.g. processes)
 */
@@ -79,7 +85,7 @@ void sortBurst (Process processes [], int Y) {
 	
 	Process temp;
 	
-	for (int j = 0; j < Y; j++) {
+	for (int j = 0; j < Y-1; j++) {
         if (processes[j].C > processes[j+1].C) {
             temp = processes[j];
             processes[j] = processes[j+1];
@@ -116,7 +122,20 @@ void FCFS_SJF (Process processes [], int Y, int X) {
 				Y - Number of elements (e.g. processes)
 */
 // void SRTF (Process processes [], int Y) {
-	
+//    float burstSum = 0;
+//    for(int j = 0;j<Y;j++)
+//       burstSum+=processes[j].C;
+//    int startEndSize = ceil(burstSum / Y);
+//    int startEndTime [startEndSize][2];
+// 
+//     int currTimeStamp = 0;
+//     sortArrival(processes, Y);
+//     for(int i = 0; i < Y; i++) {
+//         processes[i].E = currTimeStamp;
+//         processes[i].F = currTimeStamp + processes[i].C;
+//         processes[i].D = computeWaitTime(0, processes[i].E, processes[i].B);
+//         currTimeStamp = processes[i].F;            
+//     }
 // }
 
 /*
@@ -144,7 +163,7 @@ int main () {
     String20 sFile;
     int X, Y, Z, ctr = -1;
     Process processes[100];
-
+    
     // 1. The program will just ask the user to input the name of the input text file
     printf("File name (e.g. Sample.txt): ");
     scanf("%s", sFile);   
@@ -154,8 +173,23 @@ int main () {
     if(fptr != NULL) { // 2.1. If the text file exists
         // 3. Processing the contents of the text file
         while(!feof(fptr)) {
-            if (ctr == -1)    // 3.1. Reading X(sched algo), Y(processes #), Z(time quantum)
+            if (ctr == -1) {   // 3.1. Reading X(sched algo), Y(processes #), Z(time quantum)
                 fscanf(fptr, "%d %d %d", &X, &Y, &Z);
+                if (X < 0 || X > 3) {
+                    printf("The indicated scheduling algorithm does not exist.\n");
+                    fseek(fptr, 0, SEEK_END);
+                }
+                else if(Y < 3 || Y > 100) {
+                    X = -1;
+                    printf("The number of processes is not in range (3 <= Y <= 100).\n"); 
+                    fseek(fptr, 0, SEEK_END);
+                }
+                else if(X == 3 && (Z < 1 || Z > 100)) {
+                    X = -1;
+                    printf("The indicated time slice value is not in range (1 <= Z <= 100).\n");   
+                    fseek(fptr, 0, SEEK_END);
+                } 
+            }
             else {               // 3.2. Reading each process
                 fscanf(fptr, "%d %d %d",  &processes[ctr].A, &processes[ctr].B, &processes[ctr].C);
                 processes[ctr].D = 0;
@@ -168,17 +202,17 @@ int main () {
 
         // 4. Performing the CPU Scheduling Algo
     	switch (X) {
-    		case 2: //SRTF(processes, Y);
+            case 0:
+            case 1: FCFS_SJF(processes, Y, X); 
+                break;
+            case 2: //SRTF(processes, Y);
     			break;
     		case 3: //RR(processes, Y, Z);
                 break;
-            default: 
-                if (X > 3)
-                    printf("The indicated scheduling algorithm does not exist.\n");
-                else FCFS_SJF(processes, Y, X); 
+            default: printf("Program terminating...\n"); 
     	}        
     }
-    else printf("%s not found.\n", sFile);    // 2.2. If the text file does not exists
+    else printf("%s not found.\n\nProgram terminating...\n", sFile);    // 2.2. If the text file does not exists
 
     return 0;
 }

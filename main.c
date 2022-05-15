@@ -33,7 +33,7 @@ int computeWaitTime (int currWaitTime, int a, int b) {
                 totalBurst - the sum of all burst time of the processes
 */
 void computeTotalWaitTime (Process processes [], int Y, int startEndTime [][3], int totalBurst) {
-    int i,j;
+    int i, j;
     // Computing total waiting time per process
     for(i = 0; i < Y; i++)
         for(j = 0; j < totalBurst; j++)
@@ -59,10 +59,10 @@ void computeTotalWaitTime (Process processes [], int Y, int startEndTime [][3], 
 	@Return: returns a floating point number representing the average waiting time
 */
 float computeAvgWaitTime (Process processes [], int Y) {
-	
+	int j;
 	float sum = 0.0;
 	
-	for (int j = 0; j < Y; j++)
+	for (j = 0; j < Y; j++)
 		sum += processes[j].D;
 
 	return sum / Y;
@@ -76,9 +76,10 @@ float computeAvgWaitTime (Process processes [], int Y) {
                 totalBurst - the sum of all burst time of the processes
 */
 void printMultipleStartEndTime (Process process, int startEndTime[][3], int totalBurst) {
-    for(int i=0; i < totalBurst; i++) {
+    int i;
+    for(i = 0; i < totalBurst; i++) {
         if(process.A == startEndTime[i][0])
-            printf(" Start Time: %d End Time: %d | ", startEndTime[i][1], startEndTime[i][2]);
+            printf(" Start Time: %d End Time: %d |", startEndTime[i][1], startEndTime[i][2]);
     }
 }
 /*	FUNCTION: displayOutput()
@@ -91,10 +92,11 @@ void printMultipleStartEndTime (Process process, int startEndTime[][3], int tota
                 totalBurst - the sum of all burst time of the processes
 */
 void displayOutput (Process processes [], int Y, int X, int startEndTime[][3], int totalBurst) {
+    int i, j, k;
     Process temp;
 	// Sorting according to Process ID
-	for (int j = 0; j < Y; j++)
-		for (int k = j+1; k < Y; k++) {
+	for (j = 0; j < Y; j++)
+		for (k = j+1; k < Y; k++) {
 			if (processes[j].A > processes[k].A) {
 				temp = processes[j];
 				processes[j] = processes[k];
@@ -102,12 +104,12 @@ void displayOutput (Process processes [], int Y, int X, int startEndTime[][3], i
 			}
 		}
     // Displaying Results
-    for(int i = 0; i < Y; i++) {
+    for(i = 0; i < Y; i++) {
         printf("P[%d]", processes[i].A);
         if(X < 2)
-            printf(" Start Time: %d End Time: %d | ", processes[i].E, processes[i].F); 
+            printf(" Start Time: %d End Time: %d |", processes[i].E, processes[i].F); 
         else printMultipleStartEndTime(processes[i],startEndTime,totalBurst);
-        printf("Waiting Time: %d\n", processes[i].D); 
+        printf(" Waiting Time: %d\n", processes[i].D); 
     }
 	printf ("Average Waiting Time: %.2f \n", computeAvgWaitTime(processes, Y));
 }
@@ -119,11 +121,11 @@ void displayOutput (Process processes [], int Y, int X, int startEndTime[][3], i
 				Y - Number of elements (e.g. processes)
 */
 void sortArrival (Process processes [], int Y) {
-	
+	int j, k;
 	Process temp;
 	
-	for (int j = 0; j < Y; j++)
-		for (int k = j+1; k < Y; k++) {
+	for (j = 0; j < Y; j++)
+		for (k = j+1; k < Y; k++) {
 			if (processes[j].B > processes[k].B) {
 				temp = processes[j];
 				processes[j] = processes[k];
@@ -138,10 +140,10 @@ void sortArrival (Process processes [], int Y) {
 				Y - Number of elements (e.g. processes)
 */
 void sortBurst (Process processes [], int Y) {
-	
+	int j;
 	Process temp;
 	
-	for (int j = 0; j < Y-1; j++) {
+	for (j = 0; j < Y-1; j++) {
         if (processes[j].C > processes[j+1].C) {
             temp = processes[j];
             processes[j] = processes[j+1];
@@ -159,7 +161,8 @@ void sortBurst (Process processes [], int Y) {
 */
 int computeTotalBurstTime (Process processes [], int Y) {
     float burstSum = 0;
-    for(int j = 0;j<Y;j++)
+    int j;
+    for(j = 0; j < Y; j++)
         burstSum+=processes[j].C;
     return burstSum;
 }
@@ -173,11 +176,11 @@ int computeTotalBurstTime (Process processes [], int Y) {
 */
 void FCFS_SJF (Process processes [], int X, int Y) {
     int startEndTime[computeTotalBurstTime(processes, Y)][3]; 
-    int currTimeStamp = 0;
+    int i, currTimeStamp = 0;
     sortArrival(processes, Y);
     if (X == 1)
         sortBurst(processes, Y);
-    for(int i = 0; i < Y; i++) {
+    for(i = 0; i < Y; i++) {
         processes[i].E = currTimeStamp;
         processes[i].F = currTimeStamp + processes[i].C;
         processes[i].D = computeWaitTime(0, processes[i].E, processes[i].B);
@@ -194,7 +197,7 @@ void FCFS_SJF (Process processes [], int X, int Y) {
 				Y - Number of elements (e.g. processes)
 */
 void SRTF (Process processes [], int X, int Y) {
-    int i, j, k, min, seCtr = 0; //rechecc
+    int i, j, index, min, seCtr = 0; 
     int totalBurst = computeTotalBurstTime(processes, Y);
     int execution[totalBurst];
     int startEndTime[totalBurst][3]; 
@@ -214,10 +217,10 @@ void SRTF (Process processes [], int X, int Y) {
         for(j = 0; j < Y; j++) 
             if (processes[j].C != 0 && processes[j].B <= i && processes[j].C < min) { 
                 min = processes[j].C; 
-                k = j; 
+                index = j; 
             }  
-        processes[k].C--; 
-        execution[i] = processes[k].A; 
+        processes[index].C--; 
+        execution[i] = processes[index].A; 
     }
         
     // Getting the start and end time pairs per process
